@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/ApiGateway/">
+    <Project Path="ApiGateway/ApiGateway/ApiGateway.csproj" />
+  </Folder>
+  <Folder Name="/CategoriaApi/">
+    <Project Path="CategoriaApi/CategoriaApi/CategoriaApi.csproj" />
+  </Folder>
+  <Folder Name="/VehiculoApi/">
+    <Project Path="VehiculoApi/VehiculoApi/VehiculoApi.csproj" />
+  </Folder>
+</Solution>

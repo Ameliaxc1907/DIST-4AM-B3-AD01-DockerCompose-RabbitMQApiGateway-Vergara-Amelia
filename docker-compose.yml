@@ -1,0 +1,98 @@
+services:
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq-vehiculos-app
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - distribuidos-vehiculos-net
+
+  categoria:
+    build:
+      context: .\CategoriaApi\CategoriaApi
+      dockerfile: Dockerfile
+    container_name: categoria-api-app
+    ports:
+      - "5001:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__CategoriasConnection: >-
+        Server=host.docker.internal,1433;
+        Database=CategoriaDB;
+        User Id=usuario_vehiculo;
+        Password=1234;
+        TrustServerCertificate=True;
+        Encrypt=False;
+      RabbitMQ__HostName: rabbitmq
+      RabbitMQ__Port: 5672
+      RabbitMQ__UserName: admin
+      RabbitMQ__Password: admin123
+      RabbitMQ__QueueName: categoria_creada
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - distribuidos-vehiculos-net
+
+  vehiculo:
+    build:
+      context: .\VehiculoApi\VehiculoApi
+      dockerfile: Dockerfile
+    container_name: vehiculo-api-app
+    ports:
+      - "5002:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__VehiculosConnection: >-
+        Server=host.docker.internal,1433;
+        Database=VehiculoDB;
+        User Id=usuario_vehiculo;
+        Password=1234;
+        TrustServerCertificate=True;
+        Encrypt=False;
+      RabbitMQ__HostName: rabbitmq
+      RabbitMQ__Port: 5672
+      RabbitMQ__UserName: admin
+      RabbitMQ__Password: admin123
+      RabbitMQ__QueueName: categoria_creada
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - distribuidos-vehiculos-net
+
+  apigateway:
+    build:
+      context: .\ApiGateway\ApiGateway
+      dockerfile: Dockerfile
+    container_name: apigateway-vehiculos-app
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:8080"
+      ReverseProxy__Clusters__categoriasCluster__Destinations__categoriasDestination__Address: >-
+        http://categoria:8080/
+      ReverseProxy__Clusters__vehiculosCluster__Destinations__vehiculosDestination__Address: >-
+        http://vehiculo:8080/
+    depends_on:
+      - categoria
+      - vehiculo
+    networks:
+      - distribuidos-vehiculos-net
+
+networks:
+  distribuidos-vehiculos-net:
+    driver: bridge
