@@ -8,7 +8,7 @@ namespace VehiculoApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Administrador")]
+    [Authorize]
     public class VehiculosController : ControllerBase
     {
         private readonly VehiculosDBContext _dbContext;
@@ -19,6 +19,7 @@ namespace VehiculoApi.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,User")]
         public async Task<ActionResult<IEnumerable<Vehiculos>>> GetVehiculos()
         {
             var vehiculos = await _dbContext.Vehiculos
@@ -29,6 +30,7 @@ namespace VehiculoApi.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,User")]
         public async Task<ActionResult<Vehiculos>> GetVehiculo(int id)
         {
             var vehiculo = await _dbContext.Vehiculos
@@ -42,6 +44,7 @@ namespace VehiculoApi.Controllers
         }
 
         [HttpGet("categoria/{idCategoria}")]
+        [Authorize(Roles = "Admin,User")]
         public async Task<ActionResult<IEnumerable<Vehiculos>>> GetVehiculosPorCategoria(int idCategoria)
         {
             var vehiculos = await _dbContext.Vehiculos
@@ -53,6 +56,7 @@ namespace VehiculoApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Vehiculos>> CrearVehiculo(Vehiculos vehiculo)
         {
             _dbContext.Vehiculos.Add(vehiculo);
@@ -65,6 +69,7 @@ namespace VehiculoApi.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ActualizarVehiculo(int id, Vehiculos vehiculo)
         {
             if (id != vehiculo.IdVehiculo)
@@ -77,6 +82,7 @@ namespace VehiculoApi.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> EliminarVehiculo(int id)
         {
             var vehiculo = await _dbContext.Vehiculos.FindAsync(id);

@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Icon from './Icons.jsx'
 
-export default function Login({ onLogin }) {
+export default function Login({ onLogin, initialError = '' }) {
   const [credentials, setCredentials] = useState({ usuario: 'admin', password: '' })
-  const [error, setError] = useState('')
+  const [error, setError] = useState(initialError)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => setError(initialError), [initialError])
 
   const submit = async (event) => {
     event.preventDefault()

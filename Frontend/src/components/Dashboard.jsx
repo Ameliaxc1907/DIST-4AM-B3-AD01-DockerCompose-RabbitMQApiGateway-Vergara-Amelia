@@ -1,6 +1,6 @@
 import Icon from './Icons.jsx'
 
-export default function Dashboard({ vehiculos, categorias, loading, onNavigate }) {
+export default function Dashboard({ vehiculos, categorias, loading, onNavigate, canManage }) {
   return (
     <section className="page-stack">
       <header className="page-header page-header--welcome">
@@ -28,18 +28,18 @@ export default function Dashboard({ vehiculos, categorias, loading, onNavigate }
       <article className="quick-panel">
         <div>
           <span className="eyebrow">Accesos rápidos</span>
-          <h2>Administre el inventario</h2>
-          <p>Consulte y mantenga actualizados los registros principales.</p>
+          <h2>{canManage ? 'Administre el inventario' : 'Consulte el inventario'}</h2>
+          <p>{canManage ? 'Consulte y mantenga actualizados los registros principales.' : 'Revise los registros disponibles en el sistema.'}</p>
         </div>
         <div className="quick-actions">
           <button className="quick-action" type="button" onClick={() => onNavigate('vehiculos')}>
             <span><Icon name="car" /></span>
-            <div><strong>Gestionar vehículos</strong><small>Consultar, crear y editar</small></div>
+            <div><strong>{canManage ? 'Gestionar vehículos' : 'Ver vehículos'}</strong><small>{canManage ? 'Consultar, crear y editar' : 'Consultar registros'}</small></div>
             <Icon name="arrow" />
           </button>
           <button className="quick-action" type="button" onClick={() => onNavigate('categorias')}>
             <span><Icon name="tag" /></span>
-            <div><strong>Gestionar categorías</strong><small>Organizar el catálogo</small></div>
+            <div><strong>{canManage ? 'Gestionar categorías' : 'Ver categorías'}</strong><small>{canManage ? 'Organizar el catálogo' : 'Consultar registros'}</small></div>
             <Icon name="arrow" />
           </button>
         </div>

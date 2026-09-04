@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { canWrite, getRoleLabel } from '../api/client.js'
 import Icon from './Icons.jsx'
 
 const sections = [
@@ -9,6 +10,8 @@ const sections = [
 
 export default function Layout({ activeSection, onNavigate, onLogout, user, children }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const roleLabel = getRoleLabel(user.rol)
+  const userCanWrite = canWrite(user)
 
   const navigate = (section) => {
     onNavigate(section)
@@ -20,7 +23,7 @@ export default function Layout({ activeSection, onNavigate, onLogout, user, chil
       <aside className={`sidebar ${menuOpen ? 'sidebar--open' : ''}`}>
         <div className="brand">
           <span className="brand__mark"><Icon name="car" size={24} /></span>
-          <span><strong>Vehículos</strong><small>Panel administrativo</small></span>
+          <span><strong>Vehículos</strong><small>{userCanWrite ? 'Panel administrativo' : 'Panel de consulta'}</small></span>
         </div>
 
         <nav className="sidebar__nav" aria-label="Navegación principal">
@@ -41,7 +44,7 @@ export default function Layout({ activeSection, onNavigate, onLogout, user, chil
         <div className="sidebar__footer">
           <div className="user-card">
             <span className="avatar">{user.usuario.charAt(0).toUpperCase()}</span>
-            <span><strong>{user.usuario}</strong><small>{user.rol}</small></span>
+            <span><strong>{user.usuario}</strong><small>{roleLabel}</small></span>
           </div>
           <button className="nav-item nav-item--logout" type="button" onClick={onLogout}>
             <Icon name="logout" /> Cerrar sesión

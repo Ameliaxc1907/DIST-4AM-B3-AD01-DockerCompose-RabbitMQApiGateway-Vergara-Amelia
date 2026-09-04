@@ -13,7 +13,7 @@ const emptyVehicle = {
   estado: true,
 }
 
-export default function Vehiculos({ items, categorias, loading, onReload, notify }) {
+export default function Vehiculos({ items, categorias, loading, onReload, notify, canManage }) {
   const [form, setForm] = useState(null)
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
@@ -104,19 +104,21 @@ export default function Vehiculos({ items, categorias, loading, onReload, notify
         <div>
           <span className="eyebrow">Inventario</span>
           <h1>Vehículos</h1>
-          <p>Administre los vehículos registrados en el sistema.</p>
+          <p>{canManage ? 'Administre los vehículos registrados en el sistema.' : 'Consulte los vehículos registrados en el sistema.'}</p>
         </div>
         <div className="header-actions">
           <button className="button button--secondary" type="button" onClick={onReload} disabled={loading}>
             <Icon name="refresh" /> Actualizar
           </button>
-          <button className="button button--primary" type="button" onClick={openNew} disabled={!categorias.length}>
-            <Icon name="plus" /> Nuevo vehículo
-          </button>
+          {canManage && (
+            <button className="button button--primary" type="button" onClick={openNew} disabled={!categorias.length}>
+              <Icon name="plus" /> Nuevo vehículo
+            </button>
+          )}
         </div>
       </header>
 
-      {!categorias.length && !loading && (
+      {canManage && !categorias.length && !loading && (
         <div className="inline-notice">Debe crear al menos una categoría antes de registrar vehículos.</div>
       )}
 
@@ -128,12 +130,12 @@ export default function Vehiculos({ items, categorias, loading, onReload, notify
         <div className="table-scroll">
           <table>
             <thead>
-              <tr><th>ID</th><th>Vehículo</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th><th className="actions-cell">Acciones</th></tr>
+              <tr><th>ID</th><th>Vehículo</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th>{canManage && <th className="actions-cell">Acciones</th>}</tr>
             </thead>
             <tbody>
               {loading ? (
                 Array.from({ length: 4 }).map((_, index) => (
-                  <tr key={index} className="skeleton-row"><td colSpan="7"><span /></td></tr>
+                  <tr key={index} className="skeleton-row"><td colSpan={canManage ? 7 : 6}><span /></td></tr>
                 ))
               ) : items.length ? items.map((vehicle) => (
                 <tr key={vehicle.idVehiculo}>
@@ -143,20 +145,22 @@ export default function Vehiculos({ items, categorias, loading, onReload, notify
                   <td data-label="Precio">{Number(vehicle.precio).toLocaleString('es-CO', { style: 'currency', currency: 'USD' })}</td>
                   <td data-label="Stock">{vehicle.stock}</td>
                   <td data-label="Estado"><span className={`status ${vehicle.estado ? 'status--active' : 'status--inactive'}`}>{vehicle.estado ? 'Activo' : 'Inactivo'}</span></td>
-                  <td className="actions-cell" data-label="Acciones">
-                    <button className="icon-button" type="button" onClick={() => openEdit(vehicle)} aria-label={`Editar ${vehicle.marca} ${vehicle.modelo}`}><Icon name="edit" /></button>
-                    <button className="icon-button icon-button--danger" type="button" onClick={() => setDeleting(vehicle)} aria-label={`Eliminar ${vehicle.marca} ${vehicle.modelo}`}><Icon name="trash" /></button>
-                  </td>
+                  {canManage && (
+                    <td className="actions-cell" data-label="Acciones">
+                      <button className="icon-button" type="button" onClick={() => openEdit(vehicle)} aria-label={`Editar ${vehicle.marca} ${vehicle.modelo}`}><Icon name="edit" /></button>
+                      <button className="icon-button icon-button--danger" type="button" onClick={() => setDeleting(vehicle)} aria-label={`Eliminar ${vehicle.marca} ${vehicle.modelo}`}><Icon name="trash" /></button>
+                    </td>
+                  )}
                 </tr>
               )) : (
-                <tr><td colSpan="7"><div className="empty-state"><Icon name="car" size={30} /><strong>No hay vehículos registrados</strong><span>Use “Nuevo vehículo” para crear el primero.</span></div></td></tr>
+                <tr><td colSpan={canManage ? 7 : 6}><div className="empty-state"><Icon name="car" size={30} /><strong>No hay vehículos registrados</strong>{canManage && <span>Use “Nuevo vehículo” para crear el primero.</span>}</div></td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {form && (
+      {canManage && form && (
         <Modal title={form.idVehiculo ? 'Editar vehículo' : 'Nuevo vehículo'} onClose={() => !saving && setForm(null)}>
           <form onSubmit={submit} noValidate>
             <div className="form-grid">
@@ -178,7 +182,7 @@ export default function Vehiculos({ items, categorias, loading, onReload, notify
         </Modal>
       )}
 
-      {deleting && <ConfirmDialog title="Eliminar vehículo" message={<>¿Desea eliminar <strong>{deleting.marca} {deleting.modelo}</strong>? Esta acción no se puede deshacer.</>} busy={deleteBusy} onCancel={() => setDeleting(null)} onConfirm={confirmDelete} />}
+      {canManage && deleting && <ConfirmDialog title="Eliminar vehículo" message={<>¿Desea eliminar <strong>{deleting.marca} {deleting.modelo}</strong>? Esta acción no se puede deshacer.</>} busy={deleteBusy} onCancel={() => setDeleting(null)} onConfirm={confirmDelete} />}
     </section>
   )
 }

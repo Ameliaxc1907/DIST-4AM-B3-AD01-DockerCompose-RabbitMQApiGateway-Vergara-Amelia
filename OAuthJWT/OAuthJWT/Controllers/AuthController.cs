@@ -20,17 +20,20 @@ namespace OAuthJWT.Controllers
         [HttpPost("login")]
         public IActionResult Login(LoginRequest request)
         {
+            var username = string.IsNullOrWhiteSpace(request.Username)
+                ? request.Usuario?.Trim() ?? string.Empty
+                : request.Username.Trim();
             string rol;
 
-            if (request.Usuario == "admin" &&
+            if (username == "admin" &&
                 request.Password == _configuration["Auth:AdminPassword"])
             {
-                rol = "Administrador";
+                rol = "Admin";
             }
-            else if (request.Usuario == "usuario" &&
+            else if (username == "user" &&
                      request.Password == _configuration["Auth:UserPassword"])
             {
-                rol = "Usuario";
+                rol = "User";
             }
             else
             {
@@ -39,7 +42,7 @@ namespace OAuthJWT.Controllers
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, request.Usuario),
+                new Claim(ClaimTypes.Name, username),
                 new Claim(ClaimTypes.Role, rol)
             };
 
@@ -58,7 +61,7 @@ namespace OAuthJWT.Controllers
             return Ok(new
             {
                 token = new JwtSecurityTokenHandler().WriteToken(token),
-                usuario = request.Usuario,
+                usuario = username,
                 rol,
                 expiraEnMinutos = expirationMinutes
             });
@@ -67,6 +70,7 @@ namespace OAuthJWT.Controllers
 
     public class LoginRequest
     {
+        public string Username { get; set; } = string.Empty;
         public string Usuario { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
     }

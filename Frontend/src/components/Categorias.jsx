@@ -5,7 +5,7 @@ import { ConfirmDialog, Modal } from './Modal.jsx'
 
 const emptyCategory = { idCategoria: 0, nombre: '', descripcion: '' }
 
-export default function Categorias({ items, loading, onReload, notify }) {
+export default function Categorias({ items, loading, onReload, notify, canManage }) {
   const [form, setForm] = useState(null)
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
@@ -81,10 +81,10 @@ export default function Categorias({ items, loading, onReload, notify }) {
   return (
     <section className="page-stack">
       <header className="page-header">
-        <div><span className="eyebrow">Organización</span><h1>Categorías</h1><p>Organice los vehículos por tipo y propósito.</p></div>
+        <div><span className="eyebrow">Organización</span><h1>Categorías</h1><p>{canManage ? 'Organice los vehículos por tipo y propósito.' : 'Consulte las categorías disponibles en el sistema.'}</p></div>
         <div className="header-actions">
           <button className="button button--secondary" type="button" onClick={() => onReload(false)} disabled={loading}><Icon name="refresh" /> Actualizar</button>
-          <button className="button button--primary" type="button" onClick={() => openForm()}><Icon name="plus" /> Nueva categoría</button>
+          {canManage && <button className="button button--primary" type="button" onClick={() => openForm()}><Icon name="plus" /> Nueva categoría</button>}
         </div>
       </header>
 
@@ -92,25 +92,27 @@ export default function Categorias({ items, loading, onReload, notify }) {
         <div className="table-summary"><strong>Listado general</strong><span>{loading ? 'Cargando…' : `${items.length} registro${items.length === 1 ? '' : 's'}`}</span></div>
         <div className="table-scroll">
           <table>
-            <thead><tr><th>ID</th><th>Nombre</th><th>Descripción</th><th className="actions-cell">Acciones</th></tr></thead>
+            <thead><tr><th>ID</th><th>Nombre</th><th>Descripción</th>{canManage && <th className="actions-cell">Acciones</th>}</tr></thead>
             <tbody>
-              {loading ? Array.from({ length: 4 }).map((_, index) => <tr key={index} className="skeleton-row"><td colSpan="4"><span /></td></tr>) : items.length ? items.map((category) => (
+              {loading ? Array.from({ length: 4 }).map((_, index) => <tr key={index} className="skeleton-row"><td colSpan={canManage ? 4 : 3}><span /></td></tr>) : items.length ? items.map((category) => (
                 <tr key={category.idCategoria}>
                   <td data-label="ID"><span className="id-chip">#{category.idCategoria}</span></td>
                   <td data-label="Nombre"><strong>{category.nombre}</strong></td>
                   <td data-label="Descripción" className="description-cell">{category.descripcion || 'Sin descripción'}</td>
-                  <td className="actions-cell" data-label="Acciones">
-                    <button className="icon-button" type="button" onClick={() => openEdit(category)} aria-label={`Editar ${category.nombre}`}><Icon name="edit" /></button>
-                    <button className="icon-button icon-button--danger" type="button" onClick={() => setDeleting(category)} aria-label={`Eliminar ${category.nombre}`}><Icon name="trash" /></button>
-                  </td>
+                  {canManage && (
+                    <td className="actions-cell" data-label="Acciones">
+                      <button className="icon-button" type="button" onClick={() => openEdit(category)} aria-label={`Editar ${category.nombre}`}><Icon name="edit" /></button>
+                      <button className="icon-button icon-button--danger" type="button" onClick={() => setDeleting(category)} aria-label={`Eliminar ${category.nombre}`}><Icon name="trash" /></button>
+                    </td>
+                  )}
                 </tr>
-              )) : <tr><td colSpan="4"><div className="empty-state"><Icon name="tag" size={30} /><strong>No hay categorías registradas</strong><span>Use “Nueva categoría” para crear la primera.</span></div></td></tr>}
+              )) : <tr><td colSpan={canManage ? 4 : 3}><div className="empty-state"><Icon name="tag" size={30} /><strong>No hay categorías registradas</strong>{canManage && <span>Use “Nueva categoría” para crear la primera.</span>}</div></td></tr>}
             </tbody>
           </table>
         </div>
       </div>
 
-      {form && (
+      {canManage && form && (
         <Modal title={form.idCategoria ? 'Editar categoría' : 'Nueva categoría'} onClose={() => !saving && setForm(null)}>
           <form onSubmit={submit} noValidate>
             <div className="form-grid">
@@ -122,7 +124,7 @@ export default function Categorias({ items, loading, onReload, notify }) {
         </Modal>
       )}
 
-      {deleting && <ConfirmDialog title="Eliminar categoría" message={<>¿Desea eliminar la categoría <strong>{deleting.nombre}</strong>? Esta acción no se puede deshacer.</>} busy={deleteBusy} onCancel={() => setDeleting(null)} onConfirm={confirmDelete} />}
+      {canManage && deleting && <ConfirmDialog title="Eliminar categoría" message={<>¿Desea eliminar la categoría <strong>{deleting.nombre}</strong>? Esta acción no se puede deshacer.</>} busy={deleteBusy} onCancel={() => setDeleting(null)} onConfirm={confirmDelete} />}
     </section>
   )
 }

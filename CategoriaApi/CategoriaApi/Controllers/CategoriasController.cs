@@ -9,7 +9,7 @@ namespace CategoriaApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Administrador")]
+    [Authorize]
     public class CategoriasController : ControllerBase
     {
         private readonly CategoriasDBContext _dbContext;
@@ -24,6 +24,7 @@ namespace CategoriaApi.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,User")]
         public async Task<ActionResult<IEnumerable<Categorias>>> GetCategorias()
         {
             var categorias = await _dbContext.Categorias
@@ -34,6 +35,7 @@ namespace CategoriaApi.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,User")]
         public async Task<ActionResult<Categorias>> GetCategoria(int id)
         {
             var categoria = await _dbContext.Categorias
@@ -47,6 +49,7 @@ namespace CategoriaApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Categorias>> CrearCategoria(Categorias categoria)
         {
             _dbContext.Categorias.Add(categoria);
@@ -61,6 +64,7 @@ namespace CategoriaApi.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ActualizarCategoria(int id, Categorias categoria)
         {
             if (id != categoria.IdCategoria)
@@ -73,6 +77,7 @@ namespace CategoriaApi.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> EliminarCategoria(int id)
         {
             var categoria = await _dbContext.Categorias.FindAsync(id);

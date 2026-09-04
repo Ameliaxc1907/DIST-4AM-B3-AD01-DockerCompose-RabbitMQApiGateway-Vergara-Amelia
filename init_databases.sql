@@ -51,9 +51,9 @@ IF NOT EXISTS (SELECT 1 FROM [dbo].[Categorias])
 BEGIN
     INSERT INTO [dbo].[Categorias] ([Nombre], [Descripcion])
     VALUES 
-        ('SUV', 'Vehículos utilitarios deportivos espaciosos y versátiles'),
-        ('Sedan', 'Vehículos tipo sedán compactos y elegantes'),
-        ('Camioneta', 'Vehículos de carga ligera y trabajo pesado');
+        (N'SUV', N'Veh' + NCHAR(237) + N'culos utilitarios deportivos espaciosos y vers' + NCHAR(225) + N'tiles'),
+        (N'Sedan', N'Veh' + NCHAR(237) + N'culos tipo sed' + NCHAR(225) + N'n compactos y elegantes'),
+        (N'Camioneta', N'Veh' + NCHAR(237) + N'culos de carga ligera y trabajo pesado');
 END
 GO
 
@@ -98,8 +98,8 @@ IF NOT EXISTS (SELECT 1 FROM [dbo].[Vehiculos])
 BEGIN
     INSERT INTO [dbo].[Vehiculos] ([IdCategoria], [Marca], [Modelo], [Precio], [Stock], [Estado])
     VALUES 
-        (1, 'Toyota', 'RAV4', 32000.00, 10, 1),
-        (2, 'Hyundai', 'Elantra', 21500.00, 5, 1),
-        (3, 'Ford', 'F-150', 48000.00, 3, 1);
+        (1, N'Toyota', N'RAV4', 32000.00, 10, 1),
+        (2, N'Hyundai', N'Elantra', 21500.00, 5, 1),
+        (3, N'Ford', N'F-150', 48000.00, 3, 1);
 END
 GO
