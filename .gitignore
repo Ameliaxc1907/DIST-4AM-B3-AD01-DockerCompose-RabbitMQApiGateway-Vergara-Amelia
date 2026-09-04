@@ -38,6 +38,25 @@ Release/
 .env.*
 !.env.example
 
+# SECRETOS, CREDENCIALES Y CERTIFICADOS LOCALES
+secrets/
+**/secrets/
+credentials/
+**/credentials/
+*.secret
+*.secrets
+*.credentials
+*.publishsettings
+*.pem
+*.key
+*.pfx
+*.p12
+.npmrc
+.pnpmrc
+.azure/
+local.settings.json
+**/local.settings.json
+
 appsettings.Local.json
 appsettings.*.Local.json
 
@@ -62,6 +81,10 @@ docker-compose.override.yml
 *.nupkg
 *.snupkg
 packages/
+node_modules/
+**/node_modules/
+dist/
+**/dist/
 
 # COBERTURA Y PRUEBAS
 TestResults/

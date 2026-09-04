@@ -1,98 +1,170 @@
 services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - "14330:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:?Defina SQL_SA_PASSWORD en el archivo .env}
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q \"SELECT 1\" || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - distribuidos-vehiculos-net
+
+  sql-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+        SQLCMD=/opt/mssql-tools18/bin/sqlcmd
+        if [ ! -x "$$SQLCMD" ]; then SQLCMD=/opt/mssql-tools/bin/sqlcmd; fi
+        "$$SQLCMD" -S sqlserver -U sa -P "$$MSSQL_SA_PASSWORD" -C -b \
+          -i /scripts/init_databases.sql \
+          -v AppLogin="$$SQL_APP_USER" AppPassword="$$SQL_APP_PASSWORD"
+    environment:
+      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:?Defina SQL_SA_PASSWORD en el archivo .env}
+      SQL_APP_USER: ${SQL_APP_USER:?Defina SQL_APP_USER en el archivo .env}
+      SQL_APP_PASSWORD: ${SQL_APP_PASSWORD:?Defina SQL_APP_PASSWORD en el archivo .env}
+    volumes:
+      - ./init_databases.sql:/scripts/init_databases.sql:ro
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - distribuidos-vehiculos-net
 
   rabbitmq:
     image: rabbitmq:4-management
-    container_name: rabbitmq-vehiculos-app
     ports:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?Defina RABBITMQ_USER en el archivo .env}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Defina RABBITMQ_PASSWORD en el archivo .env}
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+    networks:
+      - distribuidos-vehiculos-net
+
+  oauthjwt:
+    build:
+      context: ./OAuthJWT/OAuthJWT
+      dockerfile: Dockerfile
+    ports:
+      - "5003:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Jwt__Key: ${JWT_KEY:?Defina JWT_KEY en el archivo .env}
+      Jwt__Issuer: ${JWT_ISSUER:-OAuthJWT}
+      Jwt__Audience: ${JWT_AUDIENCE:-PracticaVehiculosApis}
+      Jwt__ExpireMinutes: ${JWT_EXPIRE_MINUTES:-60}
+      Auth__AdminPassword: ${AUTH_ADMIN_PASSWORD:?Defina AUTH_ADMIN_PASSWORD en el archivo .env}
+      Auth__UserPassword: ${AUTH_USER_PASSWORD:?Defina AUTH_USER_PASSWORD en el archivo .env}
     networks:
       - distribuidos-vehiculos-net
 
   categoria:
     build:
-      context: .\CategoriaApi\CategoriaApi
+      context: ./CategoriaApi/CategoriaApi
       dockerfile: Dockerfile
-    container_name: categoria-api-app
     ports:
       - "5001:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: "http://+:8080"
-      ConnectionStrings__CategoriasConnection: >-
-        Server=host.docker.internal,1433;
-        Database=CategoriaDB;
-        User Id=usuario_vehiculo;
-        Password=1234;
-        TrustServerCertificate=True;
-        Encrypt=False;
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__CategoriasConnection: Server=sqlserver,1433;Database=CategoriaDB;User Id=${SQL_APP_USER};Password=${SQL_APP_PASSWORD};TrustServerCertificate=True;Encrypt=False
+      Jwt__Key: ${JWT_KEY:?Defina JWT_KEY en el archivo .env}
+      Jwt__Issuer: ${JWT_ISSUER:-OAuthJWT}
+      Jwt__Audience: ${JWT_AUDIENCE:-PracticaVehiculosApis}
       RabbitMQ__HostName: rabbitmq
       RabbitMQ__Port: 5672
-      RabbitMQ__UserName: admin
-      RabbitMQ__Password: admin123
+      RabbitMQ__UserName: ${RABBITMQ_USER:?Defina RABBITMQ_USER en el archivo .env}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD:?Defina RABBITMQ_PASSWORD en el archivo .env}
       RabbitMQ__QueueName: categoria_creada
     depends_on:
       rabbitmq:
         condition: service_healthy
+      sql-init:
+        condition: service_completed_successfully
     networks:
       - distribuidos-vehiculos-net
 
   vehiculo:
     build:
-      context: .\VehiculoApi\VehiculoApi
+      context: ./VehiculoApi/VehiculoApi
       dockerfile: Dockerfile
-    container_name: vehiculo-api-app
     ports:
       - "5002:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: "http://+:8080"
-      ConnectionStrings__VehiculosConnection: >-
-        Server=host.docker.internal,1433;
-        Database=VehiculoDB;
-        User Id=usuario_vehiculo;
-        Password=1234;
-        TrustServerCertificate=True;
-        Encrypt=False;
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__VehiculosConnection: Server=sqlserver,1433;Database=VehiculoDB;User Id=${SQL_APP_USER};Password=${SQL_APP_PASSWORD};TrustServerCertificate=True;Encrypt=False
+      Jwt__Key: ${JWT_KEY:?Defina JWT_KEY en el archivo .env}
+      Jwt__Issuer: ${JWT_ISSUER:-OAuthJWT}
+      Jwt__Audience: ${JWT_AUDIENCE:-PracticaVehiculosApis}
       RabbitMQ__HostName: rabbitmq
       RabbitMQ__Port: 5672
-      RabbitMQ__UserName: admin
-      RabbitMQ__Password: admin123
+      RabbitMQ__UserName: ${RABBITMQ_USER:?Defina RABBITMQ_USER en el archivo .env}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD:?Defina RABBITMQ_PASSWORD en el archivo .env}
       RabbitMQ__QueueName: categoria_creada
     depends_on:
       rabbitmq:
         condition: service_healthy
+      sql-init:
+        condition: service_completed_successfully
     networks:
       - distribuidos-vehiculos-net
 
   apigateway:
     build:
-      context: .\ApiGateway\ApiGateway
+      context: ./ApiGateway/ApiGateway
       dockerfile: Dockerfile
-    container_name: apigateway-vehiculos-app
     ports:
       - "5000:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: "http://+:8080"
-      ReverseProxy__Clusters__categoriasCluster__Destinations__categoriasDestination__Address: >-
-        http://categoria:8080/
-      ReverseProxy__Clusters__vehiculosCluster__Destinations__vehiculosDestination__Address: >-
-        http://vehiculo:8080/
+      ASPNETCORE_URLS: http://+:8080
+      ReverseProxy__Clusters__oauthJwtCluster__Destinations__oauthJwtDestination__Address: http://oauthjwt:8080/
+      ReverseProxy__Clusters__categoriasCluster__Destinations__categoriasDestination__Address: http://categoria:8080/
+      ReverseProxy__Clusters__vehiculosCluster__Destinations__vehiculosDestination__Address: http://vehiculo:8080/
+      Cors__AllowedOrigins__0: ${FRONTEND_ORIGIN:-http://localhost:8088}
+      Cors__AllowedOrigins__1: http://localhost:5173
     depends_on:
+      - oauthjwt
       - categoria
       - vehiculo
+    networks:
+      - distribuidos-vehiculos-net
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${FRONTEND_API_URL:-http://localhost:5000}
+    ports:
+      - "8088:80"
+    depends_on:
+      - apigateway
     networks:
       - distribuidos-vehiculos-net
 
 networks:
   distribuidos-vehiculos-net:
     driver: bridge
+
+volumes:
+  sqlserver-data:

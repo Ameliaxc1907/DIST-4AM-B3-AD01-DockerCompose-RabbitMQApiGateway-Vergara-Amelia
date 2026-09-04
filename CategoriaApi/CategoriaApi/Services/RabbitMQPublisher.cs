@@ -18,10 +18,12 @@ namespace CategoriaApi.Services
         {
             var factory = new ConnectionFactory
             {
-                HostName = _configuration["RabbitMQ:HostName"],
+                HostName = _configuration["RabbitMQ:HostName"] ?? "localhost",
                 Port = int.Parse(_configuration["RabbitMQ:Port"] ?? "5672"),
-                UserName = _configuration["RabbitMQ:UserName"],
+                UserName = _configuration["RabbitMQ:UserName"]
+                    ?? throw new InvalidOperationException("RabbitMQ:UserName es obligatorio."),
                 Password = _configuration["RabbitMQ:Password"]
+                    ?? throw new InvalidOperationException("RabbitMQ:Password es obligatorio.")
             };
 
             using var connection = await factory.CreateConnectionAsync();

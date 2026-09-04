@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VehiculoApi.Data;
@@ -7,6 +8,7 @@ namespace VehiculoApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Administrador")]
     public class VehiculosController : ControllerBase
     {
         private readonly VehiculosDBContext _dbContext;

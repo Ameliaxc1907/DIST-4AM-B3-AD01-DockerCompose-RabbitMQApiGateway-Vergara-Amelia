@@ -1,16 +1,17 @@
 -- =============================================================
 -- SCRIPT DE CREACIÓN DE BASES DE DATOS, TABLAS Y USUARIO SQL
+-- Requiere variables SQLCMD: AppLogin y AppPassword.
 -- =============================================================
 
 -- 1. CREACIÓN DEL LOGIN SQL
-IF NOT EXISTS (SELECT name FROM sys.sql_logins WHERE name = 'usuario_vehiculo')
+IF NOT EXISTS (SELECT name FROM sys.sql_logins WHERE name = N'$(AppLogin)')
 BEGIN
-    CREATE LOGIN [usuario_vehiculo] WITH PASSWORD = N'1234', DEFAULT_DATABASE = [master], CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
+    CREATE LOGIN [$(AppLogin)] WITH PASSWORD = N'$(AppPassword)', DEFAULT_DATABASE = [master], CHECK_EXPIRATION = OFF, CHECK_POLICY = ON;
 END
 ELSE
 BEGIN
-    ALTER LOGIN [usuario_vehiculo] WITH PASSWORD = N'1234', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;
-    ALTER LOGIN [usuario_vehiculo] ENABLE;
+    ALTER LOGIN [$(AppLogin)] WITH PASSWORD = N'$(AppPassword)', CHECK_EXPIRATION = OFF, CHECK_POLICY = ON;
+    ALTER LOGIN [$(AppLogin)] ENABLE;
 END
 GO
 
@@ -35,11 +36,14 @@ END
 GO
 
 -- Permisos de usuario en CategoriaDB
-IF NOT EXISTS (SELECT name FROM sys.database_principals WHERE name = 'usuario_vehiculo')
+IF NOT EXISTS (SELECT name FROM sys.database_principals WHERE name = N'$(AppLogin)')
 BEGIN
-    CREATE USER [usuario_vehiculo] FOR LOGIN [usuario_vehiculo];
+    CREATE USER [$(AppLogin)] FOR LOGIN [$(AppLogin)];
 END
-ALTER ROLE [db_owner] ADD MEMBER [usuario_vehiculo];
+IF IS_ROLEMEMBER(N'db_owner', N'$(AppLogin)') <> 1
+BEGIN
+    ALTER ROLE [db_owner] ADD MEMBER [$(AppLogin)];
+END
 GO
 
 -- Datos iniciales de prueba para Categorias
@@ -79,11 +83,14 @@ END
 GO
 
 -- Permisos de usuario en VehiculoDB
-IF NOT EXISTS (SELECT name FROM sys.database_principals WHERE name = 'usuario_vehiculo')
+IF NOT EXISTS (SELECT name FROM sys.database_principals WHERE name = N'$(AppLogin)')
 BEGIN
-    CREATE USER [usuario_vehiculo] FOR LOGIN [usuario_vehiculo];
+    CREATE USER [$(AppLogin)] FOR LOGIN [$(AppLogin)];
 END
-ALTER ROLE [db_owner] ADD MEMBER [usuario_vehiculo];
+IF IS_ROLEMEMBER(N'db_owner', N'$(AppLogin)') <> 1
+BEGIN
+    ALTER ROLE [db_owner] ADD MEMBER [$(AppLogin)];
+END
 GO
 
 -- Datos iniciales de prueba para Vehiculos

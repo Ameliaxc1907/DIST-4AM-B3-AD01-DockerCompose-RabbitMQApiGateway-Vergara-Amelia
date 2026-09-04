@@ -5,6 +5,9 @@
   <Folder Name="/CategoriaApi/">
     <Project Path="CategoriaApi/CategoriaApi/CategoriaApi.csproj" />
   </Folder>
+  <Folder Name="/OAuthJWT/">
+    <Project Path="OAuthJWT/OAuthJWT/OAuthJWT.csproj" />
+  </Folder>
   <Folder Name="/VehiculoApi/">
     <Project Path="VehiculoApi/VehiculoApi/VehiculoApi.csproj" />
   </Folder>

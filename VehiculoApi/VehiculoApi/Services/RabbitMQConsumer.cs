@@ -34,8 +34,10 @@ namespace VehiculoApi.Services
             {
                 HostName = _configuration["RabbitMQ:HostName"] ?? "localhost",
                 Port = int.Parse(_configuration["RabbitMQ:Port"] ?? "5672"),
-                UserName = _configuration["RabbitMQ:UserName"] ?? "admin",
-                Password = _configuration["RabbitMQ:Password"] ?? "admin123"
+                UserName = _configuration["RabbitMQ:UserName"]
+                    ?? throw new InvalidOperationException("RabbitMQ:UserName es obligatorio."),
+                Password = _configuration["RabbitMQ:Password"]
+                    ?? throw new InvalidOperationException("RabbitMQ:Password es obligatorio.")
             };
 
             // Intentar conectar con RabbitMQ

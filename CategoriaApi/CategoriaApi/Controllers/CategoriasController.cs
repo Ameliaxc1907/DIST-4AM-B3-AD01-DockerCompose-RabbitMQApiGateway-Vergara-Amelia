@@ -1,6 +1,7 @@
 using CategoriaApi.Data;
 using CategoriaApi.Models;
 using CategoriaApi.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +9,7 @@ namespace CategoriaApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Administrador")]
     public class CategoriasController : ControllerBase
     {
         private readonly CategoriasDBContext _dbContext;
