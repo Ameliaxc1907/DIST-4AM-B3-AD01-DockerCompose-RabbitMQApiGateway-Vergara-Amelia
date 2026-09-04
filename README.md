@@ -233,3 +233,18 @@ Server=tcp:sql-vehiculos-ame2026-central.database.windows.net,1433;Initial Catal
 - `.env.example` y `CLAVES_AZURE_EJEMPLO.txt` contienen únicamente placeholders.
 - El frontend no conoce la clave JWT ni credenciales de servicios.
 - `MEMORIA_COMANDOS_AZURE.md` conserva el procedimiento con valores sensibles sustituidos por placeholders.
+
+## Detención y eliminación después de la revisión
+
+Los recursos deben permanecer disponibles, como mínimo, hasta el domingo 13/09/2026. No ejecute la eliminación antes de esa fecha ni antes de que finalice la revisión de la práctica.
+
+Después de la revisión, la forma más sencilla de detener definitivamente los servicios y evitar consumo posterior es eliminar el Resource Group completo:
+
+```powershell
+az group delete `
+    --name rg-practica-vehiculos `
+    --yes `
+    --no-wait
+```
+
+El comando elimina en segundo plano todos los recursos contenidos en `rg-practica-vehiculos`; debe ejecutarse únicamente cuando ya no sea necesario conservar la práctica publicada.

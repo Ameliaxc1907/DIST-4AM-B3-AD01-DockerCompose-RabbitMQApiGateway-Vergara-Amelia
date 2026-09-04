@@ -2,70 +2,61 @@
 
 Registro reproducible del despliegue final de la práctica. Los nombres de recursos y URLs públicas no son secretos. Todos los valores sensibles fueron sustituidos por placeholders `<...>`.
 
-## 1. Variables de trabajo
+Los recursos deben permanecer disponibles, como mínimo, hasta el domingo 13/09/2026. El comando de eliminación del final es únicamente para después de la revisión.
 
-```powershell
-$subscription = "<AZURE_SUBSCRIPTION_ID>"
-$resourceGroup = "rg-practica-vehiculos"
-$location = "centralus"
-$acrName = "acrvehiculosame2026"
-$acrServer = "acrvehiculosame2026.azurecr.io"
-$sqlServer = "sql-vehiculos-ame2026-central"
-$sqlDatabase = "VehiculosDB"
-$containerEnvironment = "env-practica-vehiculos"
-$gatewayUrl = "https://gateway-vehiculos.greencoast-c47f23f3.centralus.azurecontainerapps.io"
-$frontendUrl = "https://frontend-vehiculos.greencoast-c47f23f3.centralus.azurecontainerapps.io"
-```
-
-## 2. Sesión, proveedores y extensión
+## 1. Login y verificación
 
 ```powershell
 az login
-az account set --subscription $subscription
+az account set --subscription "<AZURE_SUBSCRIPTION_ID>"
 az account show
 az provider register --namespace Microsoft.App
 az provider register --namespace Microsoft.OperationalInsights
 az extension add --name containerapp --upgrade
 ```
 
-## 3. Resource Group y Azure Container Registry
+## 2. Resource Group
 
 ```powershell
 az group create `
-  --name $resourceGroup `
-  --location $location
-
-az acr create `
-  --resource-group $resourceGroup `
-  --name $acrName `
-  --sku Basic
-
-az acr login --name $acrName
+  --name "rg-practica-vehiculos" `
+  --location "centralus"
 ```
 
-## 4. Construcción y publicación de imágenes
+## 3. Azure Container Registry
+
+```powershell
+az acr create `
+  --resource-group "rg-practica-vehiculos" `
+  --name "acrvehiculosame2026" `
+  --sku Basic
+
+az acr login --name "acrvehiculosame2026"
+```
+
+## 4. Imágenes
 
 Ejecutados desde la raíz del proyecto:
 
 ```powershell
-docker build -t "$acrServer/oauthjwt:latest" .\OAuthJWT\OAuthJWT
-docker push "$acrServer/oauthjwt:latest"
+docker build -t "acrvehiculosame2026.azurecr.io/oauthjwt:latest" .\OAuthJWT\OAuthJWT
+docker push "acrvehiculosame2026.azurecr.io/oauthjwt:latest"
 
-docker build -t "$acrServer/categoria:latest" .\CategoriaApi\CategoriaApi
-docker push "$acrServer/categoria:latest"
+docker build -t "acrvehiculosame2026.azurecr.io/categoria:latest" .\CategoriaApi\CategoriaApi
+docker push "acrvehiculosame2026.azurecr.io/categoria:latest"
 
-docker build -t "$acrServer/vehiculo:latest" .\VehiculoApi\VehiculoApi
-docker push "$acrServer/vehiculo:latest"
+docker build -t "acrvehiculosame2026.azurecr.io/vehiculo:latest" .\VehiculoApi\VehiculoApi
+docker push "acrvehiculosame2026.azurecr.io/vehiculo:latest"
 
-docker build -t "$acrServer/apigateway:latest" .\ApiGateway\ApiGateway
-docker push "$acrServer/apigateway:latest"
+docker build -t "acrvehiculosame2026.azurecr.io/apigateway:latest" .\ApiGateway\ApiGateway
+docker push "acrvehiculosame2026.azurecr.io/apigateway:latest"
 
 docker build `
-  --build-arg "VITE_API_URL=$gatewayUrl" `
-  -t "$acrServer/frontend:latest" `
+  --build-arg "VITE_API_URL=https://gateway-vehiculos.greencoast-c47f23f3.centralus.azurecontainerapps.io" `
+  -t "acrvehiculosame2026.azurecr.io/frontend:latest" `
   .\Frontend
 
-docker push "$acrServer/frontend:latest"
+docker push "acrvehiculosame2026.azurecr.io/frontend:latest"
 ```
 
 ## 5. Azure SQL
@@ -90,30 +81,24 @@ Cadena utilizada como secreto de Container Apps:
 Server=tcp:sql-vehiculos-ame2026-central.database.windows.net,1433;Initial Catalog=VehiculosDB;User ID=<AZURE_SQL_USER>;Password=<AZURE_SQL_PASSWORD>;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
 ```
 
-## 6. Container Apps Environment
+## 6. Container Apps
+
+### Environment
 
 ```powershell
 az containerapp env create `
-  --name $containerEnvironment `
-  --resource-group $resourceGroup `
-  --location $location
+  --name "env-practica-vehiculos" `
+  --resource-group "rg-practica-vehiculos" `
+  --location "centralus"
 ```
 
-Variables sanitizadas empleadas en los comandos siguientes:
-
-```powershell
-$acrUsername = "<ACR_USERNAME>"
-$acrPassword = "<ACR_PASSWORD>"
-$sqlConnection = "Server=tcp:sql-vehiculos-ame2026-central.database.windows.net,1433;Initial Catalog=VehiculosDB;User ID=<AZURE_SQL_USER>;Password=<AZURE_SQL_PASSWORD>;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
-```
-
-## 7. RabbitMQ
+### RabbitMQ
 
 ```powershell
 az containerapp create `
   --name "rabbitmq-vehiculos" `
-  --resource-group $resourceGroup `
-  --environment $containerEnvironment `
+  --resource-group "rg-practica-vehiculos" `
+  --environment "env-practica-vehiculos" `
   --image "rabbitmq:4-management" `
   --ingress internal `
   --transport tcp `
@@ -127,17 +112,17 @@ az containerapp create `
     "RABBITMQ_DEFAULT_PASS=secretref:rabbitmq-password"
 ```
 
-## 8. OAuthJWT
+### OAuthJWT
 
 ```powershell
 az containerapp create `
   --name "oauthjwt-vehiculos" `
-  --resource-group $resourceGroup `
-  --environment $containerEnvironment `
-  --image "$acrServer/oauthjwt:latest" `
-  --registry-server $acrServer `
-  --registry-username $acrUsername `
-  --registry-password $acrPassword `
+  --resource-group "rg-practica-vehiculos" `
+  --environment "env-practica-vehiculos" `
+  --image "acrvehiculosame2026.azurecr.io/oauthjwt:latest" `
+  --registry-server "acrvehiculosame2026.azurecr.io" `
+  --registry-username "<ACR_USERNAME>" `
+  --registry-password "<ACR_PASSWORD>" `
   --ingress internal `
   --target-port 8080 `
   --secrets `
@@ -155,21 +140,21 @@ az containerapp create `
     "Auth__UserPassword=secretref:user-password"
 ```
 
-## 9. CategoriaApi
+### CategoriaApi
 
 ```powershell
 az containerapp create `
   --name "categoria-vehiculos" `
-  --resource-group $resourceGroup `
-  --environment $containerEnvironment `
-  --image "$acrServer/categoria:latest" `
-  --registry-server $acrServer `
-  --registry-username $acrUsername `
-  --registry-password $acrPassword `
+  --resource-group "rg-practica-vehiculos" `
+  --environment "env-practica-vehiculos" `
+  --image "acrvehiculosame2026.azurecr.io/categoria:latest" `
+  --registry-server "acrvehiculosame2026.azurecr.io" `
+  --registry-username "<ACR_USERNAME>" `
+  --registry-password "<ACR_PASSWORD>" `
   --ingress internal `
   --target-port 8080 `
   --secrets `
-    "sql-connection=$sqlConnection" `
+    "sql-connection=Server=tcp:sql-vehiculos-ame2026-central.database.windows.net,1433;Initial Catalog=VehiculosDB;User ID=<AZURE_SQL_USER>;Password=<AZURE_SQL_PASSWORD>;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;" `
     "jwt-key=<JWT_KEY>" `
     "rabbitmq-password=<RABBITMQ_PASSWORD>" `
   --env-vars `
@@ -186,22 +171,22 @@ az containerapp create `
     "RabbitMQ__QueueName=categoria_creada"
 ```
 
-## 10. VehiculoApi
+### VehiculoApi
 
 ```powershell
 az containerapp create `
   --name "vehiculo-vehiculos" `
-  --resource-group $resourceGroup `
-  --environment $containerEnvironment `
-  --image "$acrServer/vehiculo:latest" `
-  --registry-server $acrServer `
-  --registry-username $acrUsername `
-  --registry-password $acrPassword `
+  --resource-group "rg-practica-vehiculos" `
+  --environment "env-practica-vehiculos" `
+  --image "acrvehiculosame2026.azurecr.io/vehiculo:latest" `
+  --registry-server "acrvehiculosame2026.azurecr.io" `
+  --registry-username "<ACR_USERNAME>" `
+  --registry-password "<ACR_PASSWORD>" `
   --ingress internal `
   --target-port 8080 `
   --min-replicas 1 `
   --secrets `
-    "sql-connection=$sqlConnection" `
+    "sql-connection=Server=tcp:sql-vehiculos-ame2026-central.database.windows.net,1433;Initial Catalog=VehiculosDB;User ID=<AZURE_SQL_USER>;Password=<AZURE_SQL_PASSWORD>;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;" `
     "jwt-key=<JWT_KEY>" `
     "rabbitmq-password=<RABBITMQ_PASSWORD>" `
   --env-vars `
@@ -218,17 +203,17 @@ az containerapp create `
     "RabbitMQ__QueueName=categoria_creada"
 ```
 
-## 11. API Gateway
+### API Gateway
 
 ```powershell
 az containerapp create `
   --name "gateway-vehiculos" `
-  --resource-group $resourceGroup `
-  --environment $containerEnvironment `
-  --image "$acrServer/apigateway:latest" `
-  --registry-server $acrServer `
-  --registry-username $acrUsername `
-  --registry-password $acrPassword `
+  --resource-group "rg-practica-vehiculos" `
+  --environment "env-practica-vehiculos" `
+  --image "acrvehiculosame2026.azurecr.io/apigateway:latest" `
+  --registry-server "acrvehiculosame2026.azurecr.io" `
+  --registry-username "<ACR_USERNAME>" `
+  --registry-password "<ACR_PASSWORD>" `
   --ingress external `
   --target-port 8080 `
   --env-vars `
@@ -237,21 +222,21 @@ az containerapp create `
     "ReverseProxy__Clusters__oauthJwtCluster__Destinations__oauthJwtDestination__Address=http://oauthjwt-vehiculos/" `
     "ReverseProxy__Clusters__categoriasCluster__Destinations__categoriasDestination__Address=http://categoria-vehiculos/" `
     "ReverseProxy__Clusters__vehiculosCluster__Destinations__vehiculosDestination__Address=http://vehiculo-vehiculos/" `
-    "Cors__AllowedOrigins__0=$frontendUrl" `
-    "Cors__AllowedOrigins__1=$frontendUrl"
+    "Cors__AllowedOrigins__0=https://frontend-vehiculos.greencoast-c47f23f3.centralus.azurecontainerapps.io" `
+    "Cors__AllowedOrigins__1=https://frontend-vehiculos.greencoast-c47f23f3.centralus.azurecontainerapps.io"
 ```
 
-## 12. Frontend
+### Frontend
 
 ```powershell
 az containerapp create `
   --name "frontend-vehiculos" `
-  --resource-group $resourceGroup `
-  --environment $containerEnvironment `
-  --image "$acrServer/frontend:latest" `
-  --registry-server $acrServer `
-  --registry-username $acrUsername `
-  --registry-password $acrPassword `
+  --resource-group "rg-practica-vehiculos" `
+  --environment "env-practica-vehiculos" `
+  --image "acrvehiculosame2026.azurecr.io/frontend:latest" `
+  --registry-server "acrvehiculosame2026.azurecr.io" `
+  --registry-username "<ACR_USERNAME>" `
+  --registry-password "<ACR_PASSWORD>" `
   --ingress external `
   --target-port 80
 ```
@@ -261,13 +246,27 @@ Después de conocer el FQDN público del frontend, se confirmó CORS en el Gatew
 ```powershell
 az containerapp update `
   --name "gateway-vehiculos" `
-  --resource-group $resourceGroup `
+  --resource-group "rg-practica-vehiculos" `
   --set-env-vars `
-    "Cors__AllowedOrigins__0=$frontendUrl" `
-    "Cors__AllowedOrigins__1=$frontendUrl"
+    "Cors__AllowedOrigins__0=https://frontend-vehiculos.greencoast-c47f23f3.centralus.azurecontainerapps.io" `
+    "Cors__AllowedOrigins__1=https://frontend-vehiculos.greencoast-c47f23f3.centralus.azurecontainerapps.io"
 ```
 
-## 13. Comprobaciones finales
+## 7. Variables y secretos
+
+Las variables de entorno y los secretos quedaron configurados en los comandos `az containerapp create` anteriores mediante `--env-vars` y `--secrets`. Todos los valores sensibles de esta memoria usan placeholders: `<AZURE_SQL_USER>`, `<AZURE_SQL_PASSWORD>`, `<JWT_KEY>`, `<AUTH_ADMIN_PASSWORD>`, `<AUTH_USER_PASSWORD>`, `<RABBITMQ_USER>`, `<RABBITMQ_PASSWORD>`, `<ACR_USERNAME>` y `<ACR_PASSWORD>`.
+
+Para verificar los nombres configurados sin mostrar sus valores:
+
+```powershell
+az containerapp show `
+  --name "categoria-vehiculos" `
+  --resource-group "rg-practica-vehiculos" `
+  --query "properties.template.containers[0].env[].name" `
+  --output table
+```
+
+## 8. Pruebas
 
 ```powershell
 $loginBody = @{
@@ -276,15 +275,15 @@ $loginBody = @{
 } | ConvertTo-Json
 
 $login = Invoke-RestMethod `
-  -Uri "$gatewayUrl/api/Auth/login" `
+  -Uri "https://gateway-vehiculos.greencoast-c47f23f3.centralus.azurecontainerapps.io/api/Auth/login" `
   -Method Post `
   -ContentType "application/json" `
   -Body $loginBody
 
 $headers = @{ Authorization = "Bearer $($login.token)" }
 
-Invoke-RestMethod -Uri "$gatewayUrl/api/Categorias" -Headers $headers
-Invoke-RestMethod -Uri "$gatewayUrl/api/Vehiculos" -Headers $headers
+Invoke-RestMethod -Uri "https://gateway-vehiculos.greencoast-c47f23f3.centralus.azurecontainerapps.io/api/Categorias" -Headers $headers
+Invoke-RestMethod -Uri "https://gateway-vehiculos.greencoast-c47f23f3.centralus.azurecontainerapps.io/api/Vehiculos" -Headers $headers
 
 $categoria = @{
   nombre = "Prueba RabbitMQ"
@@ -292,14 +291,14 @@ $categoria = @{
 } | ConvertTo-Json
 
 Invoke-RestMethod `
-  -Uri "$gatewayUrl/api/Categorias" `
+  -Uri "https://gateway-vehiculos.greencoast-c47f23f3.centralus.azurecontainerapps.io/api/Categorias" `
   -Method Post `
   -Headers $headers `
   -ContentType "application/json" `
   -Body $categoria
 
 az containerapp list `
-  --resource-group $resourceGroup `
+  --resource-group "rg-practica-vehiculos" `
   --query "[].{Nombre:name,Estado:properties.runningStatus,URL:properties.configuration.ingress.fqdn}" `
   --output table
 ```
@@ -314,4 +313,13 @@ Resultados comprobados:
 - Consumo del evento y creación del vehículo `Sin asignar`.
 - Frontend y API Gateway accesibles mediante sus URLs públicas.
 
-No se incluyen comandos de eliminación porque no formaron parte del despliegue.
+## 9. Eliminación después de la revisión
+
+**No ejecutar antes del domingo 13/09/2026 ni antes de que finalice la revisión.** Después de esa fecha y de la aprobación de la práctica, el Resource Group completo puede eliminarse con:
+
+```powershell
+az group delete `
+    --name rg-practica-vehiculos `
+    --yes `
+    --no-wait
+```
